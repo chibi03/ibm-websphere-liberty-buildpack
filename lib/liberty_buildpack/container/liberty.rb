@@ -393,7 +393,11 @@ module LibertyBuildpack::Container
 
     def self.bin_dir?(app_dir)
       bin = File.join(app_dir, 'wlp','bin')
-      File.exist? bin
+      dir = File.exist? bin
+      if dir
+        raise "Pushed a wrongly packaged server please use 'server package --include=user' to package a server"
+      end
+      dir
     end
 
     def self.server_xml_directory(app_dir)
