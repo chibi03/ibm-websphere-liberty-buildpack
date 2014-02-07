@@ -392,8 +392,8 @@ module LibertyBuildpack::Container
     end
 
     def self.bin_dir?(app_dir)
-      bin = app_dir.join('wlp','bin')
-      File.directory? bin
+      bin = File.join(app_dir, 'wlp','bin')
+      File.exist? bin
     end
 
     def self.server_xml_directory(app_dir)
