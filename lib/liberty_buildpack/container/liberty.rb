@@ -291,9 +291,11 @@ module LibertyBuildpack::Container
     end
 
     def self.find_liberty(app_dir, configuration)
-      if server_xml(app_dir) || web_inf(app_dir) || meta_inf(app_dir)
-        version, uri, license = LibertyBuildpack::Repository::ConfiguredItem.find_item(configuration) do |candidate_version|
-          fail "Malformed Liberty version #{candidate_version}: too many version components" if candidate_version[4]
+      if !bin_dir?(app_dir)
+        if server_xml(app_dir) || web_inf(app_dir) || meta_inf(app_dir)
+          version, uri, license = LibertyBuildpack::Repository::ConfiguredItem.find_item(configuration) do |candidate_version|
+            fail "Malformed Liberty version #{candidate_version}: too many version components" if candidate_version[4]
+          end
         end
       else
         version = nil
@@ -387,6 +389,11 @@ module LibertyBuildpack::Container
 
     def self.ear?(app)
       app.include? '.ear'
+    end
+
+    def self.bin_dir?(app_dir)
+      bin = app_dir.join('wlp','bin')
+      File.directory? bin
     end
 
     def self.server_xml_directory(app_dir)
