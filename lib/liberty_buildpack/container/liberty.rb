@@ -395,7 +395,8 @@ module LibertyBuildpack::Container
       bin = File.join(app_dir, 'wlp', 'bin')
       dir = File.exist? bin
       if dir
-        raise "Pushed a wrongly packaged server please use 'server package --include=user' to package a server"
+        print "\nPushed a wrongly packaged server please use 'server package --include=user' to package a server\n"
+        raise
       end
       dir
     end
@@ -404,7 +405,8 @@ module LibertyBuildpack::Container
       server_xml_dest = File.join(app_dir, LIBERTY_HOME, USR_PATH, '**/server.xml')
       candidates = Dir.glob(server_xml_dest)
       if candidates.size > 1
-        raise "Incorrect number of servers to deploy (expecting exactly one): #{candidates}"
+        print "\nIncorrect number of servers to deploy (expecting exactly one): #{candidates}\n"
+        raise
       end
       candidates.any? ? File.dirname(candidates[0]) : nil
     end
