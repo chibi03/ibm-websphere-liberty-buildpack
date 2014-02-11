@@ -395,8 +395,8 @@ module LibertyBuildpack::Container
       bin = File.join(app_dir, 'wlp', 'bin')
       dir = File.exist? bin
       if dir
-        print "\nPushed a wrongly packaged server please use 'server package --include=user' to package a server\n"
-        raise
+        print "\nPushed a wrongly packaged server please use 'server package --include=user' to package a server\n" #workaround for lack of message in cf cli
+        raise "\nPushed a wrongly packaged server please use 'server package --include=user' to package a server\n"
       end
       dir
     end
