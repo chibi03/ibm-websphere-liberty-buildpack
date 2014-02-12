@@ -219,6 +219,9 @@ module LibertyBuildpack::Container
       end
     end
 
+    # Uses REXML to edit the application attribute in the server.xml. It specifies the location and
+    # the type.
+    # @return [void]
     def server_xml_application(server_xml)
       server_xml_doc = File.open(server_xml, 'r') { |file| REXML::Document.new(file) }
       application = REXML::XPath.match(server_xml_doc, '/server/application')[0]
@@ -316,6 +319,9 @@ module LibertyBuildpack::Container
       "liberty-#{version}"
     end
 
+    # Create required file structure from .liberty to the application when a packaged server was pushed or the user pushed from a server
+    # directory. If only an application was pushed it sym-links it to the apps directory in the defaultServer.
+    # @return [void]
     def link_application
       if Liberty.liberty_directory(@app_dir)
         FileUtils.rm_rf(usr)
