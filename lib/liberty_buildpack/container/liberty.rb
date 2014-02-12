@@ -211,17 +211,22 @@ module LibertyBuildpack::Container
         include_file.add_attribute('location', 'runtime-vars.xml')
 
         File.open(server_xml, 'w') { |file| server_xml_doc.write(file) }
-      elsif Liberty.web_inf(@app_dir)
-        create_server_xml
-      elsif Liberty.meta_inf(@app_dir)
+      elsif Liberty.web_inf(@app_dir) || Liberty.meta_inf(@app_dir)
         server_xml = create_server_xml
-        server_xml_doc = File.open(server_xml, 'r') { |file| REXML::Document.new(file) }
-        application = REXML::XPath.match(server_xml_doc, '/server/application')[0]
-        application.attributes['type'] = 'ear'
-        File.open(server_xml, 'w') { |file| server_xml_doc.write(file) }
+        server_xml_application(server_xml)
       else
         raise 'Neither a server.xml nor WEB-INF directory nor a ear was found.'
       end
+    end
+
+    def server_xml_application(server_xml)
+      server_xml_doc = File.open(server_xml, 'r') { |file| REXML::Document.new(file) }
+      application = REXML::XPath.match(server_xml_doc, '/server/application')[0]
+      application.attributes['location'] = 'myapp'
+      application.attributes['name'] = 'myapp'
+      Liberty.web_inf(@app_dir) ? application.attributes['type'] = 'war' : application.attributes['type'] = 'ear'
+
+      File.open(server_xml, 'w') { |file| server_xml_doc.write(file) }
     end
 
     def modify_endpoints(endpoints, server_xml_doc)
@@ -323,6 +328,13 @@ module LibertyBuildpack::Container
         default_server_pathname = Pathname.new(default_server_path)
         Pathname.glob(File.join(@app_dir, '*')) do |file|
           FileUtils.ln_sf(file.relative_path_from(default_server_pathname), default_server_path)
+        end
+      else
+        FileUtils.rm_rf(myapp_dir)
+        FileUtils.mkdir_p(myapp_dir)
+        myapp_pathname = Pathname.new(myapp_dir)
+        Pathname.glob(File.join(@app_dir, '*')) do |file|
+          FileUtils.ln_sf(file.relative_path_from(myapp_pathname), myapp_dir)
         end
       end
     end
