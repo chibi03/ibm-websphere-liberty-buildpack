@@ -331,7 +331,7 @@ module LibertyBuildpack::Container
           expect(server_xml_contents.include? '<featureManager>').to be_true
           expect(server_xml_contents.include? '<application context-root=\'/\' location=\'myapp\' name=\'myapp\'').to be_true
           expect(server_xml_contents.include? 'type=\'war\'').to be_true
-          expect(server_xml_contents.include? 'httpPort=\'{port}\'').to be_true
+          expect(server_xml_contents.include? 'httpPort=\'${port}\'').to be_true
         end
       end
 
