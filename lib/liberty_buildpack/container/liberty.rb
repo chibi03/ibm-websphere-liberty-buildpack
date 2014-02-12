@@ -223,7 +223,6 @@ module LibertyBuildpack::Container
       server_xml_doc = File.open(server_xml, 'r') { |file| REXML::Document.new(file) }
       application = REXML::XPath.match(server_xml_doc, '/server/application')[0]
       application.attributes['location'] = 'myapp'
-      application.attributes['name'] = 'myapp'
       Liberty.web_inf(@app_dir) ? application.attributes['type'] = 'war' : application.attributes['type'] = 'ear'
 
       File.open(server_xml, 'w') { |file| server_xml_doc.write(file) }
