@@ -337,17 +337,13 @@ module LibertyBuildpack::Container
 
       it 'should produce the correct server.xml for the META-INF case when the app is of type ear' do
         Dir.mktmpdir do |root|
-          root = File.join(root, 'app')
-          FileUtils.mkdir_p File.join(root, 'META-INF')
+          Dir.mkdir File.join(root, 'META-INF')
 
           LibertyBuildpack::Repository::ConfiguredItem.stub(:find_item) { |&block| block.call(LIBERTY_VERSION) if block }
           .and_return(LIBERTY_DETAILS)
 
-          LibertyBuildpack::Repository::ComponentIndex.stub(:new).and_return(component_index)
-          component_index.stub(:components).and_return({ 'liberty_core' => LIBERTY_SINGLE_DOWNLOAD_URI })
-
           LibertyBuildpack::Util::ApplicationCache.stub(:new).and_return(application_cache)
-          application_cache.stub(:get).with(LIBERTY_SINGLE_DOWNLOAD_URI).and_yield(File.open('spec/fixtures/wlp-stub.tar.gz'))
+          application_cache.stub(:get).with('test-liberty-uri').and_yield(File.open('spec/fixtures/wlp-stub.jar'))
 
           library_directory = File.join(root, '.lib')
           FileUtils.mkdir_p(library_directory)
