@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 require 'simplecov'
 
 SimpleCov.start do
@@ -31,7 +32,8 @@ RSpec.configure do |config|
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
-  config.before(:each) do
+  config.before(:all) do
+    LibertyBuildpack::Diagnostics::LoggerFactory.send :close
     tmpdir = Dir.tmpdir
     diagnostics_directory = File.join(tmpdir, LibertyBuildpack::Diagnostics::DIAGNOSTICS_DIRECTORY)
     FileUtils.rm_rf diagnostics_directory
@@ -45,7 +47,7 @@ RSpec.configure do |config|
   end
 
   config.after(:suite) do
-    FileUtils.rm_rf Dir.glob("#{Dir.tmpdir}/*")
+    LibertyBuildpack::Diagnostics::LoggerFactory.send :close
+    FileUtils.rm_rf File.join(Dir.tmpdir, LibertyBuildpack::Diagnostics::DIAGNOSTICS_DIRECTORY)
   end
 end
-
