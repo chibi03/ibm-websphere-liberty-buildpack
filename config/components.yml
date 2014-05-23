@@ -16,6 +16,7 @@
 # Configuration for components to use in the buildpack
 ---
 containers: 
+  - "LibertyBuildpack::Container::JavaMain" 
   - "LibertyBuildpack::Container::Liberty"
 jres:
   - "LibertyBuildpack::Jre::IBMJdk"
