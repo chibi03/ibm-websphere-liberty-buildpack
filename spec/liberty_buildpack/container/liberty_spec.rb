@@ -598,12 +598,17 @@ module LibertyBuildpack::Container
           LibertyBuildpack::Util::ApplicationCache.stub(:new).and_return(application_cache)
           application_cache.stub(:get).with(LIBERTY_SINGLE_DOWNLOAD_URI).and_yield(File.open('spec/fixtures/wlp-stub.tar.gz'))
 
+          library_directory = File.join(root, '.lib')
+          FileUtils.mkdir_p(library_directory)
           Liberty.new(
           app_dir: root,
+          lib_directory: library_directory,
           configuration: {},
           environment: {},
           license_ids: { 'IBM_LIBERTY_LICENSE' => '1234-ABCD' }
           ).compile
+          server_xml_file = File.join root, '.liberty', 'usr', 'servers', 'defaultServer', 'server.xml'
+          expect(File.exists?(server_xml_file)).to be_true
 
           server_xml_contents = File.read(server_xml_file)
           expect(server_xml_contents.include? '<featureManager>').to be_true
@@ -613,20 +618,12 @@ module LibertyBuildpack::Container
         end
       end
 
-      it 'should copy internal user esa files for a pushed server scenario when pushed server contains another user esa' do
+      it 'should produce the correct results for the zipped-up server configuration' do
         Dir.mktmpdir do |root|
           root = File.join(root, 'app')
           FileUtils.mkdir_p File.join(root, 'wlp', 'usr', 'servers', 'myServer')
           File.open(File.join(root, 'wlp', 'usr', 'servers', 'myServer', 'server.xml'), 'w') do |file|
             file.write('your text')
-          end
-          FileUtils.mkdir_p File.join(root, 'wlp', 'usr', 'extension', 'lib')
-          File.open(File.join(root, 'wlp', 'usr', 'extension', 'lib', 'existing.jar'), 'w') do |file|
-            file.write('some text')
-          end
-          FileUtils.mkdir_p File.join(root, 'wlp', 'usr', 'extension', 'lib', 'features')
-          File.open(File.join(root, 'wlp', 'usr', 'extension', 'lib', 'features', 'existing.mf'), 'w') do |file|
-            file.write('other text')
           end
 
           LibertyBuildpack::Repository::ConfiguredItem.stub(:find_item) { |&block| block.call(LIBERTY_VERSION) if block }
@@ -645,19 +642,20 @@ module LibertyBuildpack::Container
           license_ids: { 'IBM_LIBERTY_LICENSE' => '1234-ABCD' }
           ).compile
 
-          feature_lib_dir = File.join(root, '.liberty', 'usr', 'extension', 'lib')
-          expect(Dir.exists?(feature_lib_dir)).to be_true
-          jar_file = File.join(feature_lib_dir, 'dummy_feature.jar')
-          expect(File.exists?(jar_file)).to be_true
-          jar_file = File.join(feature_lib_dir, 'existing.jar')
-          expect(File.exists?(jar_file)).to be_true
-          mf_dir = File.join(feature_lib_dir, 'features')
-          expect(Dir.exists?(mf_dir)).to be_true
-          mf_file = File.join(mf_dir, 'dummy_feature.mf')
-          expect(File.exists?(mf_file)).to be_true
-          mf_file = File.join(mf_dir, 'existing.mf')
-          expect(File.exists?(mf_file)).to be_true
+          liberty_directory = File.join(root, '.liberty')
+          expect(Dir.exists?(liberty_directory)).to be_true
+
+          server_command = File.join(root, '.liberty', 'bin', 'server')
+          expect(File.exists?(server_command)).to be_true
+
+          license_files = File.join(root, '.liberty', 'lafiles')
+          expect(Dir.exists?(license_files)).to be_true
+
+          usr_directory = File.join(root, '.liberty', 'usr')
+          expect(File.symlink?(usr_directory)).to be_true
+          expect(File.readlink(usr_directory)).to eq('../wlp/usr')
         end
+
       end
 
       it 'should copy internal user esa files for a pushed server scenario' do
@@ -988,7 +986,6 @@ module LibertyBuildpack::Container
 
           LibertyBuildpack::Util::ApplicationCache.stub(:new).and_return(application_cache)
           application_cache.stub(:get).with(LIBERTY_SINGLE_DOWNLOAD_URI).and_yield(File.open('spec/fixtures/wlp-stub.tar.gz'))
-<<<<<<< HEAD
 
           library_directory = File.join(root, '.lib')
           FileUtils.mkdir_p(library_directory)
@@ -1005,24 +1002,6 @@ module LibertyBuildpack::Container
       end
     end
 
-=======
-
-          library_directory = File.join(root, '.lib')
-          FileUtils.mkdir_p(library_directory)
-          expect do
-            Liberty.new(
-            app_dir: root,
-            lib_directory: library_directory,
-            configuration: {},
-            environment: {},
-            license_ids: { 'IBM_LIBERTY_LICENSE' => '1234-ABCD' }
-            ).compile
-          end.to raise_error(RuntimeError, 'Failed to locate a repository containing a component_index and installable components using uri test-liberty-uri.tar.gz.')
-        end
-      end
-    end
-
->>>>>>> 8786f264720795de11b8927e67a7ebfa52e5a0f8
     describe 'release' do
       it 'should generate a jvm.options file if one is not provided in server package case' do
         Dir.mktmpdir do |root|
@@ -1050,7 +1029,6 @@ module LibertyBuildpack::Container
           java_opts: %w(test-opt-2 test-opt-1),
           license_ids: { 'IBM_LIBERTY_LICENSE' => '1234-ABCD' }
           ).release
-<<<<<<< HEAD
 
           jvm_options_file = File.join(root, 'wlp', 'usr', 'servers', 'anyServer', 'jvm.options')
           expect(File.exists?(jvm_options_file)).to be_true
@@ -1074,31 +1052,6 @@ module LibertyBuildpack::Container
           LibertyBuildpack::Util::ApplicationCache.stub(:new).and_return(application_cache)
           application_cache.stub(:get).with(LIBERTY_SINGLE_DOWNLOAD_URI).and_yield(File.open('spec/fixtures/wlp-stub.jar'))
 
-=======
-
-          jvm_options_file = File.join(root, 'wlp', 'usr', 'servers', 'anyServer', 'jvm.options')
-          expect(File.exists?(jvm_options_file)).to be_true
-          file_contents = File.read(jvm_options_file)
-          expect(file_contents).to match(/test-opt-1/)
-          expect(file_contents).to match(/test-opt-2/)
-          expect(file_contents).to match(DISABLE_2PC_JAVA_OPT_REGEX)
-        end
-      end
-
-      it 'should generate a jvm.options file if one is not provided in server directory case' do
-        Dir.mktmpdir do |root|
-          FileUtils.mkdir_p File.join(root, '.liberty', 'usr', 'servers', 'defaultServer')
-          File.open(File.join(root, 'server.xml'), 'w') do |file|
-            file.write('your text')
-          end
-
-          LibertyBuildpack::Repository::ConfiguredItem.stub(:find_item) { |&block| block.call(LIBERTY_VERSION) if block }
-          .and_return(LIBERTY_DETAILS)
-
-          LibertyBuildpack::Util::ApplicationCache.stub(:new).and_return(application_cache)
-          application_cache.stub(:get).with(LIBERTY_SINGLE_DOWNLOAD_URI).and_yield(File.open('spec/fixtures/wlp-stub.jar'))
-
->>>>>>> 8786f264720795de11b8927e67a7ebfa52e5a0f8
           library_directory = File.join(root, '.lib')
           FileUtils.mkdir_p(library_directory)
           Liberty.new(
@@ -1142,7 +1095,6 @@ module LibertyBuildpack::Container
 
           LibertyBuildpack::Util::ApplicationCache.stub(:new).and_return(application_cache)
           application_cache.stub(:get).with(LIBERTY_SINGLE_DOWNLOAD_URI).and_yield(File.open('spec/fixtures/wlp-stub.jar'))
-<<<<<<< HEAD
 
           library_directory = File.join(root, '.lib')
           FileUtils.mkdir_p(library_directory)
@@ -1155,20 +1107,6 @@ module LibertyBuildpack::Container
           license_ids: { 'IBM_LIBERTY_LICENSE' => '1234-ABCD' }
           ).release
 
-=======
-
-          library_directory = File.join(root, '.lib')
-          FileUtils.mkdir_p(library_directory)
-          Liberty.new(
-          app_dir: root,
-          lib_directory: library_directory,
-          configuration: {},
-          environment: {},
-          java_opts: %w(test-opt-2 test-opt-1), # default options, normally set by jre (ibmjdk.rb) before container (liberty.rb) code
-          license_ids: { 'IBM_LIBERTY_LICENSE' => '1234-ABCD' }
-          ).release
-
->>>>>>> 8786f264720795de11b8927e67a7ebfa52e5a0f8
           jvm_options_file = File.join(root, 'wlp', 'usr', 'servers', 'defaultServer', 'jvm.options')
           expect(File.exists?(jvm_options_file)).to be_true
           file_contents = File.read(jvm_options_file)
@@ -1288,43 +1226,6 @@ module LibertyBuildpack::Container
             configuration: {},
             license_ids: {}
           ).release
-<<<<<<< HEAD
-
-          expect(command).to eq(".liberty/create_vars.rb .liberty/usr/servers/defaultServer/runtime-vars.xml && JAVA_HOME=\"$PWD/test-java-home\" .liberty/bin/server run defaultServer")
-        end
-      end
-
-      it 'should return correct execution command for the META-INF case' do
-        LibertyBuildpack::Repository::ConfiguredItem.stub(:find_item) { |&block| block.call(LIBERTY_VERSION) if block }
-        .and_return(LIBERTY_VERSION)
-
-        Dir.mktmpdir do |root|
-          FileUtils.cp_r('spec/fixtures/container_liberty_ear', root)
-          command = Liberty.new(
-            app_dir: File.join(root, 'container_liberty_ear'),
-            java_home: 'test-java-home',
-            java_opts: '',
-            configuration: {},
-            license_ids: {}
-          ).release
-
-          expect(command).to eq(".liberty/create_vars.rb .liberty/usr/servers/defaultServer/runtime-vars.xml && JAVA_HOME=\"$PWD/test-java-home\" .liberty/bin/server run defaultServer")
-        end
-      end
-
-      it 'should return correct execution command for the META-INF case' do
-        LibertyBuildpack::Repository::ConfiguredItem.stub(:find_item) { |&block| block.call(LIBERTY_VERSION) if block }
-        .and_return(LIBERTY_VERSION)
-
-        command = Liberty.new(
-        app_dir: 'spec/fixtures/container_liberty_ear',
-        java_home: 'test-java-home',
-        java_opts: '',
-        configuration: {},
-        license_ids: {}
-        ).release
-=======
->>>>>>> 8786f264720795de11b8927e67a7ebfa52e5a0f8
 
           expect(command).to eq(".liberty/create_vars.rb .liberty/usr/servers/defaultServer/runtime-vars.xml && JAVA_HOME=\"$PWD/test-java-home\" .liberty/bin/server run defaultServer")
         end

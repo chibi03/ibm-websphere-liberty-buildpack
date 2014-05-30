@@ -53,7 +53,6 @@ module LibertyBuildpack::Container
     def initialize(context)
       @logger = LibertyBuildpack::Diagnostics::LoggerFactory.get_logger
       @app_dir = context[:app_dir]
-      prep_app(@app_dir)
       @java_home = context[:java_home]
       @java_opts = context[:java_opts]
       @lib_directory = context[:lib_directory]
@@ -551,9 +550,6 @@ module LibertyBuildpack::Container
       "liberty-#{version}"
     end
 
-    # Create required file structure from .liberty to the application when a packaged server was pushed or the user pushed from a server
-    # directory. If only an application was pushed it sym-links it to the apps directory in the defaultServer.
-    # @return [void]
     def link_application
       if Liberty.liberty_directory(@app_dir)
         # Server package. We will delete the .liberty/usr directory and link in the wlp/usr directory from the server package as the usr directory. Copy user esas from
@@ -772,8 +768,8 @@ module LibertyBuildpack::Container
 
     def self.unzip(file, dir)
       file = File.expand_path(file)
-      FileUtils.mkdir_p dir
-      Dir.chdir dir do
+      FileUtils.mkdir_p (dir)
+      Dir.chdir (dir) do
         if File.exists? '/usr/bin/unzip'
           system "unzip -qqo '#{file}'"
         else
